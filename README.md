@@ -13,7 +13,7 @@ A web-application that allows the user to check the weather outlook for various 
 ## Usage 
 
 Access web-page here: (https://omair-muhi.github.io/weather-dashboard/)
-![Code-quiz startup screen!](./assets/images/start-quiz.png)
+![Weather-dashboard main screen!](./assets/images/main-screen.png)
 
 ## Credits
 
