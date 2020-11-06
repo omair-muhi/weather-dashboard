@@ -18,6 +18,7 @@ Access web-page here: (https://omair-muhi.github.io/weather-dashboard/)
 ## Credits
 
 * UoT FSF Bcamp - this template
+* W3Schools BS3 Templates
 
 ## License
 
