@@ -3,16 +3,14 @@ var summaryWeather = {
     date: "",
     weatherIcon: "",
     temperature: "",
-    humidity: "",
-    timeStamp = ""
+    humidity: ""
 }
 var detailedWeather = {
     cityName: "",
     windSpeed: 0,
     uvIndex: 0,
-    summaryWeather: {},
+    summaryWeather: {}
 }
-var searchHistoryList = ["Toronto"];
 
 // HANDLER FUNCTIONS
 function searchButtonHandler(event) {
@@ -32,14 +30,15 @@ function saveCityDataToLocalDb() {}
 /**
  * Function: loadCityDataFromLocalDb
  * Description: Load city weather data from local DB.
+ * Parameters: cityString
  */
-function loadCityDataFromLocalDb() {}
+function loadCityDataFromLocalDb(cityString) {}
 /**
- * Function: isLocalDbStale
- * Description: Determine if weather data in local DB
- *  needs to be refreshed.
+ * Function: isFoundInLocalDb
+ * Description: Determine if weather data exists in local DB
+ * Parameters: cityString
  */
-function isLocalDbStale() {}
+function isFoundInLocalDb(cityString) {}
 
 // RENDER FUNCTIONS
 /**
@@ -96,21 +95,25 @@ function retrieveFutureWeather(cityString) {
 function initApplication() {
     // display Toronto weather on page refresh
     var defaultCity = "Toronto";
-    // get today's weather
-    var currentWeatherJson = retrieveCurrentWeather(defaultCity);
-    extractCurrentWeatherData(currentWeatherJson);
-    // render today's weather
-    renderCurrentWeather();
-    // get 5-day outlook
-    var futureWeatherJson = retrieveFutureWeather(defaultCity);
-    extractFutureWeatherData(futureWeatherJson);
-    // render 5-day outlook
-    renderFutureWeather();
-    // add city to search history
-    if (searchHistoryList.includes(defaultCity) === false) {
-        searchHistoryList.push(defaultCity);
+    if (isFoundInLocalDb(defaultCity)) {
+        // populate summaryWeather and detailedWeather objects
+        loadCityDataFromLocalDb(defaultCity);
+    } else {
+        // get today's weather using an API call
+        var currentWeatherJson = retrieveCurrentWeather(defaultCity);
+        extractCurrentWeatherData(currentWeatherJson);
+        // get 5-day outlook using an API call
+        var futureWeatherJson = retrieveFutureWeather(defaultCity);
+        extractFutureWeatherData(futureWeatherJson);
+        // add city to search history
+        saveCityDataToLocalDb();
+        // render new history list
         renderHistoryList();
     }
+    // render today's weather
+    renderCurrentWeather();
+    // render 5-day outlook
+    renderFutureWeather();
 }
 // jQuery entry-point
 $(document).ready(initApplication);
