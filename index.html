@@ -29,16 +29,16 @@
                 <!-- Search bar as input-group -->
                 <div class="input-group mt-3 mb-3">
                     <div class="input-group-prepend">
-                        <button class="btn btn-outline-primary" type="button">
+                        <button class="btn btn-outline-primary" type="button" id="search-button">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
-                    <input type="text" class="form-control" placeholder="Search for a city...">
+                    <input type="text" class="form-control" placeholder="Search for a city..." id="city-search-text">
                 </div>
-                <!-- Dynamically updated list of cities -->
-                <ul class="list-group mb-3" id="search-history-list">
-                    <li class="list-group-item" id="default-city">Toronto</li>
-                </ul>
+                <!-- Dynamically updated list of cities as a button-group-->
+                <div class="btn-group-vertical">
+                    <button type="button" class="btn btn-secondary" id="toronto">Toronto</button>
+                </div>
             </div>
             <!-- 10 columns for weather data -->
             <div class="col-sm-10 text-left bg-light">

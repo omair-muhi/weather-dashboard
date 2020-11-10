@@ -12,13 +12,42 @@ var detailedWeather = {
     summaryWeather: {}
 }
 
+// MAIN
+function getAndDisplayCityWeather(cityString) {
+    if (isFoundInLocalDb(cityString)) {
+        // populate summaryWeather and detailedWeather objects
+        loadCityDataFromLocalDb(cityString);
+    } else {
+        // get today's weather using an API call
+        var currentWeatherJson = retrieveCurrentWeather(cityString);
+        // populate detailedWeather object
+        extractCurrentWeatherData(currentWeatherJson);
+        // get 5-day outlook using an API call
+        var futureWeatherJson = retrieveFutureWeather(cityString);
+        // populate summaryWeather objects
+        extractFutureWeatherData(futureWeatherJson);
+        // add city to search history
+        saveCityDataToLocalDb();
+        // render new history list
+        renderHistoryList();
+    }
+    // render today's weather
+    renderCurrentWeather();
+    // render 5-day outlook
+    renderFutureWeather();
+}
+
 // HANDLER FUNCTIONS
 function searchButtonHandler(event) {
-
+    var cityName = $("#city-search-text").val();
+    console.log("Getting weather for " + cityName);
+    // getAndDisplayCityWeather(cityName);
 }
 
 function searchHistoryButtonHandler(event) {
-
+    var cityName = $(event.target).html();
+    console.log("Getting weather for " + cityName);
+    // getAndDisplayCityWeather(cityName);
 }
 
 // LOCAL-DB FUNCTIONS
@@ -93,27 +122,13 @@ function retrieveFutureWeather(cityString) {
  * Description: Entry-point for the weather-dashboard application
  */
 function initApplication() {
-    // display Toronto weather on page refresh
-    var defaultCity = "Toronto";
-    if (isFoundInLocalDb(defaultCity)) {
-        // populate summaryWeather and detailedWeather objects
-        loadCityDataFromLocalDb(defaultCity);
-    } else {
-        // get today's weather using an API call
-        var currentWeatherJson = retrieveCurrentWeather(defaultCity);
-        extractCurrentWeatherData(currentWeatherJson);
-        // get 5-day outlook using an API call
-        var futureWeatherJson = retrieveFutureWeather(defaultCity);
-        extractFutureWeatherData(futureWeatherJson);
-        // add city to search history
-        saveCityDataToLocalDb();
-        // render new history list
-        renderHistoryList();
-    }
-    // render today's weather
-    renderCurrentWeather();
-    // render 5-day outlook
-    renderFutureWeather();
+    // clear main search bar
+    $("#city-search-text").val("");
+    // default weather upon page refresh
+    getAndDisplayCityWeather("Toronto");
+    // register event handlers
+    $("#search-button").click(searchButtonHandler);
+    $(".btn-group-vertical").click(searchHistoryButtonHandler);
 }
 // jQuery entry-point
 $(document).ready(initApplication);
