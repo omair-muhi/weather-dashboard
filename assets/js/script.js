@@ -9,10 +9,7 @@ var currentWeather = {
 }
 
 var futureWeather = {
-    date: "",
-    weatherIcon: "",
-    temperature: "",
-    humidity: ""
+    daysOutlook: []
 }
 
 
@@ -21,9 +18,8 @@ function searchButtonHandler(event) {
     var cityName = $("#city-search-text").val();
     //console.log("Getting weather for " + cityName);
     // getAndDisplayCityWeather(cityName);
-    // TESTING ONLY
     retrieveCurrentWeather(cityName);
-    // TESTING ONLY
+    retrieveFutureWeather(cityName);
 }
 
 function searchHistoryButtonHandler(event) {
@@ -73,7 +69,7 @@ function renderHistoryList() {}
  */
 function renderCurrentWeather() {
     $("#curr-city-date").text(currentWeather.city + " " + currentWeather.date);
-    $("img").attr("src", "http://openweathermap.org/img/wn/" + currentWeather.weatherIcon + "@2x.png");
+    $("#curr-icon").attr("src", "http://openweathermap.org/img/wn/" + currentWeather.weatherIcon + "@2x.png");
     $("#curr-temp").text(currentWeather.temperature);
     $("#curr-humidity").text(currentWeather.humidity);
     $("#wind-speed").text(currentWeather.windSpeed);
@@ -82,7 +78,14 @@ function renderCurrentWeather() {
  * Function: renderFutureWeather
  * Description: Populate BS cards with 5-day outlook
  */
-function renderFutureWeather() {}
+function renderFutureWeather() {
+    for (var i = 0; i < 5; i++) {
+        $("#day-" + i).text(futureWeather.daysOutlook[i].date);
+        $("#day-" + i + "-icon").attr("src", "http://openweathermap.org/img/wn/" + futureWeather.daysOutlook[i].weatherIcon + "@2x.png");
+        $("#day-" + i + "-temp").text(futureWeather.daysOutlook[i].temperature);
+        $("#day-" + i + "-humidity").text(futureWeather.daysOutlook[i].humidity);
+    }
+}
 
 // API FUNCTIONS ----------------
 /**
@@ -94,7 +97,7 @@ function renderFutureWeather() {}
  * Returns: JSON weather data
  */
 function retrieveCurrentUVData(latitude, longitude) {
-    var requestUrl = "https://api.openweathermap.org/data/2.5/uvi?lat=" + latitude + "&lon=" + longitude + "&appid=9c7e08eac863b63e5981dcd7c628c36f";
+    var requestUrl = "https://api.openweathermap.org/data/2.5/uvi?lat=" + latitude + "&lon=" + longitude + "&appid=9c7e08eac863b63e5981dcd7c628c36f&units=metric";
     fetch(requestUrl)
         .then(function(response) {
             return response.json();
@@ -167,7 +170,16 @@ function retrieveCurrentWeather(cityString) {
  * Parameters: jsonData - data returned by API call
  */
 function extractFutureWeatherData(jsonData) {
-    futureWeather.date =
+    for (var i = 0; i < 33; i += 8) {
+        var futureWeatherObj = {};
+        futureWeatherObj.date = convertToDateString(jsonData.list[i].dt);
+        futureWeatherObj.weatherIcon = jsonData.list[i].weather[0].icon;
+        futureWeatherObj.temperature = jsonData.list[i].main.temp;
+        // console.log(jsonData.list[i].main.temp);
+        futureWeatherObj.humidity = jsonData.list[i].main.humidity;
+        futureWeather.daysOutlook.push(futureWeatherObj);
+    }
+    console.log(futureWeather);
 }
 /**
  * Function: retrieveFutureWeather
@@ -185,7 +197,7 @@ function retrieveFutureWeather(cityString) {
             // populate summaryWeather objects
             extractFutureWeatherData(jsonData);
             // add city to search history
-            saveWeatherDataToLocalDb();
+            //-----saveWeatherDataToLocalDb();
             // render 5-day outlook
             renderFutureWeather();
         })
@@ -204,8 +216,6 @@ function getAndDisplayCityWeather(cityString) {
         retrieveCurrentWeather(cityString);
         // get 5-day outlook using an API call
         retrieveFutureWeather(cityString);
-        // get UV index an API call
-        retrieveCurrentUVData(cityString);
     }
 }
 
@@ -221,7 +231,8 @@ function initApplication() {
     $("#search-button").click(searchButtonHandler);
     $(".btn-group-vertical").click(searchHistoryButtonHandler);
     // default weather upon page refresh
-    //getAndDisplayCityWeather("Toronto");
+    retrieveCurrentWeather("Toronto");
+    retrieveFutureWeather("Toronto");
 }
 // jQuery entry-point
 $(document).ready(initApplication);
