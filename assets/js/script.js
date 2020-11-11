@@ -1,47 +1,29 @@
-// GLOBAL DATA
-var summaryWeather = {
+// GLOBAL DATA per API call
+var currentWeather = {
+    city: "",
+    date: "",
+    weatherIcon: "",
+    temperature: "",
+    humidity: "",
+    windSpeed: ""
+}
+
+var futureWeather = {
     date: "",
     weatherIcon: "",
     temperature: "",
     humidity: ""
 }
-var detailedWeather = {
-    cityName: "",
-    windSpeed: 0,
-    uvIndex: 0,
-    summaryWeather: {}
-}
 
-// MAIN
-function getAndDisplayCityWeather(cityString) {
-    if (isFoundInLocalDb(cityString)) {
-        // populate summaryWeather and detailedWeather objects
-        loadCityDataFromLocalDb(cityString);
-    } else {
-        // get today's weather using an API call
-        var currentWeatherJson = retrieveCurrentWeather(cityString);
-        // populate detailedWeather object
-        extractCurrentWeatherData(currentWeatherJson);
-        // get 5-day outlook using an API call
-        var futureWeatherJson = retrieveFutureWeather(cityString);
-        // populate summaryWeather objects
-        extractFutureWeatherData(futureWeatherJson);
-        // add city to search history
-        saveCityDataToLocalDb();
-        // render new history list
-        renderHistoryList();
-    }
-    // render today's weather
-    renderCurrentWeather();
-    // render 5-day outlook
-    renderFutureWeather();
-}
 
 // HANDLER FUNCTIONS
 function searchButtonHandler(event) {
     var cityName = $("#city-search-text").val();
-    console.log("Getting weather for " + cityName);
+    //console.log("Getting weather for " + cityName);
     // getAndDisplayCityWeather(cityName);
+    // TESTING ONLY
+    retrieveCurrentWeather(cityName);
+    // TESTING ONLY
 }
 
 function searchHistoryButtonHandler(event) {
@@ -52,22 +34,32 @@ function searchHistoryButtonHandler(event) {
 
 // LOCAL-DB FUNCTIONS
 /**
- * Function: saveCityDataToLocalDb
- * Description: Store city weather data in local DB.
+ * Function: saveCurrentWeatherDataToLocalDb
+ * Description: Store today's weather data in local DB.
  */
-function saveCityDataToLocalDb() {}
+function saveCurrentWeatherDataToLocalDb() {
+    localStorage.setItem(currentWeather.city + "_curr", JSON.stringify(currentWeather))
+}
 /**
  * Function: loadCityDataFromLocalDb
  * Description: Load city weather data from local DB.
  * Parameters: cityString
  */
-function loadCityDataFromLocalDb(cityString) {}
+function loadWeatherDataFromLocalDb(cityString) {
+    detailedWeather = JSON.parse(localStorage.getItem(cityString));
+}
 /**
  * Function: isFoundInLocalDb
  * Description: Determine if weather data exists in local DB
  * Parameters: cityString
  */
-function isFoundInLocalDb(cityString) {}
+function isFoundInLocalDb(cityString) {
+    if (localStorage.getItem(cityString) === null) {
+        return false;
+    } else {
+        return true;
+    }
+}
 
 // RENDER FUNCTIONS
 /**
@@ -79,33 +71,104 @@ function renderHistoryList() {}
  * Function: renderCurrentWeather
  * Description: Populate BS card with today's weather
  */
-function renderCurrentWeather() {}
+function renderCurrentWeather() {
+    $("#curr-city-date").text(currentWeather.city + " " + currentWeather.date);
+    $("img").attr("src", "http://openweathermap.org/img/wn/" + currentWeather.weatherIcon + "@2x.png");
+    $("#curr-temp").text(currentWeather.temperature);
+    $("#curr-humidity").text(currentWeather.humidity);
+    $("#wind-speed").text(currentWeather.windSpeed);
+}
 /**
  * Function: renderFutureWeather
  * Description: Populate BS cards with 5-day outlook
  */
 function renderFutureWeather() {}
 
-// API FUNCTIONS
+// API FUNCTIONS ----------------
+/**
+ * Function: retrieveCurrentUVData
+ * Description: Make an API call to get today's UV data
+ * Parameters: 
+ *  latitude
+ *  longitude
+ * Returns: JSON weather data
+ */
+function retrieveCurrentUVData(latitude, longitude) {
+    var requestUrl = "https://api.openweathermap.org/data/2.5/uvi?lat=" + latitude + "&lon=" + longitude + "&appid=9c7e08eac863b63e5981dcd7c628c36f";
+    fetch(requestUrl)
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(jsonData) {
+            $("#uv-index").text(jsonData.value);
+            if (jsonData.value <= 3)
+                $("#uv-index").addClass("badge-success");
+            else if (jsonData.value > 3 && jsonData.value <= 6)
+                $("#uv-index").addClass("badge-warning");
+            else
+                $("#uv-index").addClass("badge-danger");
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
+}
+
+function convertToDateString(weatherDtProperty) {
+    var millis = weatherDtProperty * 1000;
+    var dateObject = new Date(millis);
+    var dateString = dateObject.toLocaleString("en-US", { day: "numeric" }) + "/" + dateObject.toLocaleString("en-US", { month: "numeric" }) + "/" + dateObject.toLocaleString("en-US", { year: "numeric" });;
+    return dateString;
+}
+
 /**
  * Function: extractCurrentWeatherData
  * Description: Extract weather data from JSON data
  * Parameters: jsonData - data returned by API call
  */
-function extractCurrentWeatherData(jsonData) {}
+function extractCurrentWeatherData(jsonData) {
+    currentWeather.city = jsonData.name;
+    currentWeather.date = convertToDateString(jsonData.dt);
+    currentWeather.weatherIcon = jsonData.weather[0].icon;
+    currentWeather.temperature = jsonData.main.temp;
+    currentWeather.humidity = jsonData.main.humidity;
+    currentWeather.windSpeed = jsonData.wind.speed;
+}
 /**
  * Function: retrieveCurrentWeather
  * Description: Make an API call to get today's weather
  * Parameters: cityString - name of city
  * Returns: JSON weather data
  */
-function retrieveCurrentWeather(cityString) {}
+function retrieveCurrentWeather(cityString) {
+    var requestUrl = ("https://api.openweathermap.org/data/2.5/weather?q=" + cityString + "&appid=9c7e08eac863b63e5981dcd7c628c36f&units=metric");
+    fetch(requestUrl)
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(jsonData) {
+            // populate detailedWeather objects
+            extractCurrentWeatherData(jsonData);
+            // add city to search history
+            saveCurrentWeatherDataToLocalDb();
+            // get the UV index
+            retrieveCurrentUVData(jsonData.coord.lat, jsonData.coord.lon);
+            // render today's weather
+            renderCurrentWeather();
+            // render new history list
+            renderHistoryList();
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
+}
 /**
  * Function: extractFutureWeatherData
  * Description: Extract future weather data from JSON data
  * Parameters: jsonData - data returned by API call
  */
-function extractFutureWeatherData(jsonData) {}
+function extractFutureWeatherData(jsonData) {
+    futureWeather.date =
+}
 /**
  * Function: retrieveFutureWeather
  * Description: Make an API call to get 5-day outlook
@@ -113,10 +176,40 @@ function extractFutureWeatherData(jsonData) {}
  * Returns: JSON weather data
  */
 function retrieveFutureWeather(cityString) {
-
+    var requestUrl = ("https://api.openweathermap.org/data/2.5/forecast?q=" + cityString + "&appid=9c7e08eac863b63e5981dcd7c628c36f&units=metric");
+    fetch(requestUrl)
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(jsonData) {
+            // populate summaryWeather objects
+            extractFutureWeatherData(jsonData);
+            // add city to search history
+            saveWeatherDataToLocalDb();
+            // render 5-day outlook
+            renderFutureWeather();
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
 }
 
-// INIT FUNCTIONS
+// MAIN
+function getAndDisplayCityWeather(cityString) {
+    if (isFoundInLocalDb(cityString)) {
+        // populate summaryWeather and detailedWeather objects
+        loadWeatherDataFromLocalDb(cityString);
+    } else {
+        // get today's weather using an API call
+        retrieveCurrentWeather(cityString);
+        // get 5-day outlook using an API call
+        retrieveFutureWeather(cityString);
+        // get UV index an API call
+        retrieveCurrentUVData(cityString);
+    }
+}
+
+// INIT FUNCTION
 /**
  * Function: initApplication
  * Description: Entry-point for the weather-dashboard application
@@ -124,11 +217,11 @@ function retrieveFutureWeather(cityString) {
 function initApplication() {
     // clear main search bar
     $("#city-search-text").val("");
-    // default weather upon page refresh
-    getAndDisplayCityWeather("Toronto");
     // register event handlers
     $("#search-button").click(searchButtonHandler);
     $(".btn-group-vertical").click(searchHistoryButtonHandler);
+    // default weather upon page refresh
+    //getAndDisplayCityWeather("Toronto");
 }
 // jQuery entry-point
 $(document).ready(initApplication);
