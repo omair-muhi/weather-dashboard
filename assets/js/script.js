@@ -9,9 +9,9 @@ var currentWeather = {
 }
 
 var futureWeather = {
+    name: "",
     daysOutlook: []
 }
-
 
 // HANDLER FUNCTIONS
 function searchButtonHandler(event) {
@@ -36,6 +36,12 @@ function searchHistoryButtonHandler(event) {
 function saveCurrentWeatherDataToLocalDb() {
     localStorage.setItem(currentWeather.city + "_curr", JSON.stringify(currentWeather))
 }
+
+function saveFutureWeatherDataToLocalDb() {
+    localStorage.setItem(futureWeather.name + "_future", JSON.stringify(futureWeather));
+}
+
+
 /**
  * Function: loadCityDataFromLocalDb
  * Description: Load city weather data from local DB.
@@ -172,6 +178,7 @@ function retrieveCurrentWeather(cityString) {
 function extractFutureWeatherData(jsonData) {
     for (var i = 0; i < 33; i += 8) {
         var futureWeatherObj = {};
+        futureWeather.name = jsonData.city.name;
         futureWeatherObj.date = convertToDateString(jsonData.list[i].dt);
         futureWeatherObj.weatherIcon = jsonData.list[i].weather[0].icon;
         futureWeatherObj.temperature = jsonData.list[i].main.temp;
@@ -179,7 +186,7 @@ function extractFutureWeatherData(jsonData) {
         futureWeatherObj.humidity = jsonData.list[i].main.humidity;
         futureWeather.daysOutlook.push(futureWeatherObj);
     }
-    console.log(futureWeather);
+    // console.log(futureWeather);
 }
 /**
  * Function: retrieveFutureWeather
@@ -196,8 +203,10 @@ function retrieveFutureWeather(cityString) {
         .then(function(jsonData) {
             // populate summaryWeather objects
             extractFutureWeatherData(jsonData);
+
             // add city to search history
-            //-----saveWeatherDataToLocalDb();
+            saveFutureWeatherDataToLocalDb();
+
             // render 5-day outlook
             renderFutureWeather();
         })
@@ -225,6 +234,8 @@ function getAndDisplayCityWeather(cityString) {
  * Description: Entry-point for the weather-dashboard application
  */
 function initApplication() {
+    // clear local storage
+    localStorage.clear();
     // clear main search bar
     $("#city-search-text").val("");
     // register event handlers
